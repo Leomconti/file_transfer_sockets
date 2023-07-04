@@ -3,7 +3,6 @@
 
 import socket
 import threading
-from tqdm import tqdm
 import os
 
 class Server:
@@ -12,7 +11,7 @@ class Server:
         self.server.bind((host, port))
         self.server.listen()
         self.clients = []
-        self.files = []
+        self.files = [file for file in os.listdir("files")]
     
     def broadcast_msg(self, message):
         for client in self.clients:
@@ -26,12 +25,9 @@ class Server:
             operation = client.recv(1024).decode("utf-8")
             # Send a message to the client that the file was uploaded, downloaded or idk
             if "<UPLOAD>" in operation:
-                operation = operation.replace("<UPLOAD>", "")
-            
-                file_name, file_size = operation.split("+")  # Split the message to get file name and size
+                print("LOG -> Upload operation received")
+                file_name, file_size = operation.replace("<UPLOAD>", "").split("+")  # Split the message to get file name and size
                 file_size = int(file_size)
-                print(file_name)
-                print(file_size)
                 
                 # send the acknowledgement to the client, so it sends the file
                 client.send("<READY>".encode())
@@ -44,36 +40,51 @@ class Server:
                 while file_size > 0:
                     data = client.recv(1024)
                     if not data:
-                        print("Done reading")
+                        # print("Done reading")
                         break
                     file.write(data)
                     file_size -= len(data)
                 file.close()
-                print("File received") 
+                self.files.append(file_name)
+                print("LOG -> File received") 
                 
             elif "<DOWNLOAD>" in operation:
+                print("LOG -> Download operation received")
                 file_name = operation.replace("<DOWNLOAD>", "")
-                print("DOWNLOAD OPERATION RECEIVED")
+                # print("File name", file_name)
+                # print("FIle name: ", file_name)
                 
                 # send the information about the file size to the client, so it can read it correctly
                 file_size = os.path.getsize(f"files/{file_name}")
                 client.send(str(file_size).encode())
+                # print("File size sent")
 
                 received = client.recv(1024).decode("utf-8")
-                if received == "<READY>":
-                    print("Sending File...")
+                # print(received)
+                if "<READY>" in received:
+                    # print("Sending File...")
                     file = open(f"files/{file_name}", "rb")
                     data = file.read()
                     client.sendall(data) 
                     file.close()
-                    print("File Sent")
-                    
+                    print("LOG -> File Sent for download")
+            
+            elif "<FILES>" in operation:
+                print("LOG -> List Files operation received")
+                files = ""
+                for file in self.files:
+                    files += f"{file}+"
+                client.send(files.encode())
+                print("LOG -> Files names sent")
+                # print("Files names sent")
                 
     
     def start(self):
+        client_id = 0
         while True:
             client, addr = self.server.accept()
-            print(f"Connected with {str(addr)}")
+            client_id += 1
+            print(f"LOG -> Connected with {str(addr)}")
             
             self.clients.append(client)
             
