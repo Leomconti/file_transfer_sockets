@@ -28,20 +28,18 @@ class Client:
             file.close()
         
     def download_file(self, file_name):
-        # print("LOG -> SENDING DOWNLOAD")
         self.client.send("<DOWNLOAD>".encode())
         self.client.send(file_name.encode())
         
         file_size = int(self.client.recv(1024).decode("utf-8"))
-        # print("File size received")
 
         # write the bytes into the file
         self.client.send("<READY>".encode())
-        # print("Sent acknowledgement")
         file = open(f"clients/{self.client_id}/{file_name}", "wb")
         file_bytes = b""
         done = False
-        progress_bar = tqdm(range(file_size), f"Downloading {file_name}", unit="B", unit_scale=True, unit_divisor=1024)
+        print("Progress Bar")
+        progress_bar = tqdm(range(file_size), f"Downloading {file_name}", unit="B", unit_scale=True, unit_divisor=1024, total=int(file_size))
         while file_size > 0:
             data = self.client.recv(1024)
             if not data:
@@ -76,7 +74,6 @@ def main():
         print("2. Download File")
         print("3. Exit")
         choice = int(input("Select Operation: "))
-        print("\n" for _ in range(5)())
         match choice:
             case 1:
                 # Upload file
@@ -102,7 +99,6 @@ def main():
                 running = False
                 break
         print("LOG -> Operation Completed")
-        print("\n" for _ in range(5)())              
             
 if __name__ == "__main__":
     main()
