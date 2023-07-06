@@ -47,6 +47,7 @@ class Server:
                 file.close()
                 self.files.append(file_name)
                 print("LOG -> File received") 
+                self.broadcast_msg(f"LOG -> New File {file_name} was uploaded ! ")
                 
             elif "<DOWNLOAD>" in operation:
                 print("LOG -> Download operation received")

@@ -1,5 +1,6 @@
 import socket
 import os
+import threading
 from tqdm import tqdm
 
 class Client:
@@ -58,6 +59,12 @@ class Client:
         while True:
             message = self.client.recv(1024).decode("utf-8")
             print(message)
+            if "was uploaded" in message:
+                print("Listing all files in the server")
+                files - self.get_files_list()
+                for i, file in enumerate(files):
+                    print(f"{i}. {file}")
+            
     
     def get_files_list(self):
         self.client.send("<FILES>".encode())
@@ -66,13 +73,19 @@ class Client:
         
 
 def main():
-    client = Client()
+
+
+    destHost = int(input("Enter the destination host: "))
+    destPort = int(input("Enter the destination port: "))
+    client = Client(host=destHost, port=destPort)
     running = True
     while running:
         print("### CLIENT MENU ###")
         print("1. Upload File")
         print("2. Download File")
         print("3. Exit")
+        thread = threading.Thread(target=client.listen)
+        thread.start()
         choice = int(input("Select Operation: "))
         match choice:
             case 1:
